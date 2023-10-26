@@ -2,26 +2,26 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Homes on My New Hugo Site</title>
-    <link>https://example.org/home/</link>
+    <link>https://g4s8.github.io/gophercon-sg-2023/home/</link>
     <description>Recent content in Homes on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://example.org/home/index.xml" rel="self" type="application/rss+xml" />
+    <language>en-us</language><atom:link href="https://g4s8.github.io/gophercon-sg-2023/home/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title></title>
-      <link>https://example.org/home/1_intro/</link>
+      <link>https://g4s8.github.io/gophercon-sg-2023/home/1_intro/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.org/home/1_intro/</guid>
+      <guid>https://g4s8.github.io/gophercon-sg-2023/home/1_intro/</guid>
       <description>Go low-latency patters Kirill Cherniavskiy for GopherCon Singapore 2023
 This talk See some code examples Analyze it with different tools Check assembly code Find problems and try to optimize In this talk: - This talk is about code patterns and examples for low-latency code. - More examples and less theory. - It&#39;s not about algorithms, it&#39;s about Go internals. - It could be useful when your code should react to external events in a fast and predictable time.</description>
     </item>
     
     <item>
       <title></title>
-      <link>https://example.org/home/2_memory/</link>
+      <link>https://g4s8.github.io/gophercon-sg-2023/home/2_memory/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.org/home/2_memory/</guid>
+      <guid>https://g4s8.github.io/gophercon-sg-2023/home/2_memory/</guid>
       <description>Interfaces Be careful with interface function parameters &amp;mdash; arguments for these parameters are often moved to heap before passing to the callee function.
 Actually it&amp;rsquo;s not always obvious when the value will be moved to heap and when it&amp;rsquo;s not.
 Examples type Inter interface { // like fmt.Stringer Int64() int64 } //go:noinline func toInt(i Inter) int64 { return i.Int64() } type inter64 int64 // implementation func (i inter64) Int64() int64 { return int64(i) } Inter interface is Like fmt.</description>
@@ -29,10 +29,10 @@ Examples type Inter interface { // like fmt.Stringer Int64() int64 } //go:noinli
     
     <item>
       <title></title>
-      <link>https://example.org/home/4_setters/</link>
+      <link>https://g4s8.github.io/gophercon-sg-2023/home/4_setters/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.org/home/4_setters/</guid>
+      <guid>https://g4s8.github.io/gophercon-sg-2023/home/4_setters/</guid>
       <description>Mutators Assigning a pointer to a struct field causes heap allocation.
 Example:
 type foo struct { f *int } func (b *foo) setDefault() { var one int = 1 // moved to heap: one b.f = &amp;amp;one } func (b *foo) setF(f *int) { b.f = f } Both values are moved to heap:
@@ -41,10 +41,10 @@ func main() { var b1 foo b1.setDefault() var b2 foo var f int = 2 // moved to he
     
     <item>
       <title></title>
-      <link>https://example.org/home/7_strings/</link>
+      <link>https://g4s8.github.io/gophercon-sg-2023/home/7_strings/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.org/home/7_strings/</guid>
+      <guid>https://g4s8.github.io/gophercon-sg-2023/home/7_strings/</guid>
       <description>Strings What could be slow with strings in Go.
 Convert from bytes Creating a new string from byte slice copies data to the new string.
 Source code for printing &amp;ldquo;Hello, world!&amp;rdquo;:
@@ -54,10 +54,10 @@ LEAQ 0x30(SP), AX	LEAQ 0x23(SP), BX	MOVL $0xd, CX	CALL runtime.</description>
     
     <item>
       <title></title>
-      <link>https://example.org/home/8_end/</link>
+      <link>https://g4s8.github.io/gophercon-sg-2023/home/8_end/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.org/home/8_end/</guid>
+      <guid>https://g4s8.github.io/gophercon-sg-2023/home/8_end/</guid>
       <description>Thank you! github.com/g4s8</description>
     </item>
     
