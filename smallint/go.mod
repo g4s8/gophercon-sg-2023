@@ -1,3 +1,3 @@
-module github.com/g4s8/memory-patterns/smallint
+module github.com/g4s8/gophercon-sg-2023/smallint
 
-go 1.21.1
+go 1.21

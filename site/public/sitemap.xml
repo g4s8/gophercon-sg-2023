@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://example.org/home/1_intro/</loc>
+  </url><url>
+    <loc>https://example.org/home/2_memory/</loc>
+  </url><url>
+    <loc>https://example.org/home/4_setters/</loc>
+  </url><url>
+    <loc>https://example.org/home/7_strings/</loc>
+  </url><url>
+    <loc>https://example.org/home/8_end/</loc>
+  </url><url>
+    <loc>https://example.org/categories/</loc>
+  </url><url>
+    <loc>https://example.org/home/</loc>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+  </url><url>
+    <loc>https://example.org/</loc>
+  </url>
+</urlset>

@@ -1,5 +1,7 @@
 package main
 
+import "strconv"
+
 type foo struct {
 	x int
 }
@@ -7,9 +9,9 @@ type foo struct {
 func main() {
 	f1 := newFoo(1)
 	f2 := newFooStruct(2)
-	var f foo
-	f3 := makeFoo(&f, 3)
-	print(f1, &f2, f3)
+	f3 := makeFoo(new(foo), 3)
+	f4 := new(foo).set(4)
+	println(f1.String(), f2.String(), f3.String(), f4.String())
 }
 
 func newFoo(x int) *foo {
@@ -25,12 +27,11 @@ func makeFoo(f *foo, x int) *foo {
 	return f
 }
 
-// ./main.go:16:9: &foo{...} escapes to heap:
-// ./main.go:16:9:   flow: ~r0 = &{storage for &foo{...}}:
-// ./main.go:16:9:     from &foo{...} (spill) at ./main.go:16:9
-// ./main.go:16:9:     from return &foo{...} (return) at ./main.go:16:2
-// ./main.go:16:9: &foo{...} escapes to heap
-// ./main.go:23:14: parameter f leaks to ~r0 with derefs=0:
-// ./main.go:23:14:   flow: ~r0 = f:
-// ./main.go:23:14:     from return f (return) at ./main.go:25:2
-// ./main.go:23:14: leaking param: f to result ~r0 level=0
+func (f *foo) set(x int) *foo {
+	f.x = x
+	return f
+}
+
+func (f *foo) String() string {
+	return strconv.Itoa(f.x)
+}

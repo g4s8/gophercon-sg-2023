@@ -1,0 +1,26 @@
+BenchmarkInt32/1/toInt-16         	        322020103	        3.718 ns/op	      0 B/op	      0 allocs/op
+BenchmarkInt32/1/toInt32-16       	        847490161	        1.393 ns/op	      0 B/op	      0 allocs/op
+BenchmarkInt32/1/toIntGeneric-16  	        505307629	        2.323 ns/op	      0 B/op	      0 allocs/op
+
+BenchmarkInt32/256/toInt-16       	        92309137	       13.07 ns/op	      4 B/op	      1 allocs/op
+BenchmarkInt32/256/toInt32-16     	        848134750	        1.397 ns/op	      0 B/op	      0 allocs/op
+BenchmarkInt32/256/toIntGeneric-16         	513218498	        2.334 ns/op	      0 B/op	      0 allocs/op
+
+
+BenchmarkInt64/1/toInt-16                  	326302828	        3.710 ns/op	      0 B/op	      0 allocs/op
+BenchmarkInt64/1/toInt64-16                	846920556	        1.392 ns/op	      0 B/op	      0 allocs/op
+BenchmarkInt64/1/toIntGeneric-16           	514951911	        2.326 ns/op	      0 B/op	      0 allocs/op
+
+BenchmarkInt64/256/toInt-16                	71405162	       16.41 ns/op	      8 B/op	      1 allocs/op
+BenchmarkInt64/256/toInt64-16              	854373514	        1.397 ns/op	      0 B/op	      0 allocs/op
+BenchmarkInt64/256/toIntGeneric-16         	515565741	        2.332 ns/op	      0 B/op	      0 allocs/op
+
+
+BenchmarkStr/toInt-16                      	21114766	       48.69 ns/op	     16 B/op	      1 allocs/op
+BenchmarkStr/toIntStr-16                   	142978882	        8.378 ns/op	      0 B/op	      0 allocs/op
+BenchmarkStr/toIntGeneric-16               	132092460	        9.088 ns/op	      0 B/op	      0 allocs/op
+
+
+BenchmarkStruct/toInt-16                   	75646704	       16.16 ns/op	      8 B/op	      1 allocs/op
+BenchmarkStruct/toIntStruct-16             	1000000000	        1.163 ns/op	      0 B/op	      0 allocs/op
+BenchmarkStruct/toIntGeneric-16            	74237566	       15.77 ns/op	      8 B/op	      1 allocs/op

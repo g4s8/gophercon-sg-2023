@@ -5,45 +5,32 @@ import (
 )
 
 func main() {
-	var (
-		two   UInt32 = 2
-		three UInt32 = 3
-		four  UInt32 = 4
-		five  UInt32 = 5
-	)
-	var i UInt32
-	i.Add(&i, &two)
-	println(i.String())
-	i.Mul(&i, &four)
-	println(i.String())
-	i.Sub(&i, &three)
-	println(i.String())
-	i.Div(&i, &five)
-	println(i.String())
+	one := new(SmallInt).Set(1)
+	two := new(SmallInt).Set(2)
+	three := new(SmallInt).Set(3)
+
+	var sum SmallInt
+	sum.Add(&sum, three).Add(&sum, two).Sub(&sum, one)
+	println("3 + 2 - 1 = ", sum.String())
 }
 
-type UInt32 uint32
+type SmallInt [1]int32
 
-func (i *UInt32) Add(x, y *UInt32) *UInt32 {
-	*i = *x + *y
+func (i *SmallInt) Set(x int32) *SmallInt {
+	i[0] = x
 	return i
 }
 
-func (i *UInt32) Sub(x, y *UInt32) *UInt32 {
-	*i = *x - *y
+func (i *SmallInt) Add(x, y *SmallInt) *SmallInt {
+	i[0] = x[0] + y[0]
 	return i
 }
 
-func (i *UInt32) Mul(x, y *UInt32) *UInt32 {
-	*i = *x * *y
+func (i *SmallInt) Sub(x, y *SmallInt) *SmallInt {
+	i[0] = x[0] - y[0]
 	return i
 }
 
-func (i *UInt32) Div(x, y *UInt32) *UInt32 {
-	*i = *x / *y
-	return i
-}
-
-func (i *UInt32) String() string {
-	return strconv.FormatUint(uint64(*i), 10)
+func (i *SmallInt) String() string {
+	return strconv.FormatInt(int64(i[0]), 10)
 }

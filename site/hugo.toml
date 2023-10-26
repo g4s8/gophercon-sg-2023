@@ -1,0 +1,24 @@
+baseURL = 'https://example.org/'
+languageCode = 'en-us'
+title = 'My New Hugo Site'
+
+theme = ["github.com/dzello/reveal-hugo"]
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[outputFormats.Reveal]
+baseName = "index"
+mediaType = "text/html"
+isHTML = true
+
+[params.reveal_hugo]
+theme = "white"
+highlight_theme = "github"
+slide_number = "c/t"
+transition = "none"
+custom_css = "css/custom.css"
+
+[markup.highlight]
+codeFences = false
+

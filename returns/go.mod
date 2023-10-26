@@ -1,3 +1,3 @@
-module github.com/g4s8/memory-patterns/returns
+module github.com/g4s8/gophercon-sg-2023/returns
 
-go 1.21.1
+go 1.21

@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+  <head>
+	<meta name="generator" content="Hugo 0.119.0">
+    <meta charset="utf-8">
+<title>TODO: presentation title</title>
+
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><link rel="stylesheet" href="/reveal-js/dist/reset.css">
+<link rel="stylesheet" href="/reveal-js/dist/reveal.css"><link rel="stylesheet" href="/reveal-js/dist/theme/white.css" id="theme">
+<link rel="stylesheet" href="/highlight-js/github.min.css"><link rel="stylesheet" href="/css/custom.css" id="custom_css">
+  </head>
+  <body>
+    
+    <div class="reveal">
+      <div class="slides">
+  
+
+
+  
+
+    <section><h2 id="go-low-latency-patters">Go low-latency patters</h2>
+<p><img src="images/qr-slides-repo.png" alt="qr-slides-repo"></p>
+<p><em>Kirill Cherniavskiy for
+GopherCon Singapore 2023</em></p>
+</section><section>
+<h2 id="this-talk">This talk</h2>
+<ul>
+<li>See some code examples</li>
+<li>Analyze it with different tools</li>
+<li>Check assembly code</li>
+<li>Find problems and try to optimize</li>
+</ul>
+
+
+
+<aside class="notes"><pre><code>In this  talk:
+ - This talk is about code patterns and examples
+ for low-latency code.
+ - More examples and less theory.
+ - It's not about algorithms, it's about Go internals.
+
+- It could be useful when your code should react to external events
+in a fast and predictable time.
+- Of course, there will be some unpredictable factors,
+like hardware, OS scheduler, etc.
+</code></pre>
+</aside>
+</section><section>
+<h1 id="disclaimer">Disclaimer</h1>
+<ul>
+<li>Prefer readability where possible.</li>
+<li>Prefer simple code, not complex.</li>
+<li>Do not over optimize without need.</li>
+</ul>
+
+
+
+<aside class="notes"><p>Simple and readable code is better than
+complex and unreadable.</p>
+<p>Optimize only when sure about it and proved
+by benchmarks or profiling.</p>
+</aside>
+</section><section>
+<h3 id="good-to-know">Good to know</h3>
+<ul>
+<li>Go memory model</li>
+<li>Go internal types data structure</li>
+<li>Garbage collector</li>
+<li>A bit of runtime and compiler</li>
+</ul>
+
+
+
+<aside class="notes"><p>Allocating memory in a heap may affect latency because of GC.</p>
+<p>Object is moved to heap if compiler can&rsquo;t prove that
+it&rsquo;s not accessible after function return.</p>
+</aside>
+</section><section>
+<h3 id="real-life-story">Real life story</h3>
+<p>This one-line function executed a few millions times/sec
+caused GC to eat about 30% of CPU:</p>
+<pre><code class="language-go" data-line-numbers="5-7">type container struct {
+	index *big.Int
+}
+
+func (c *container) updateIndex(val *big.Int) {
+	c.index = new(big.Int).Set(val)
+}
+</code></pre>
+</section><section>
+<p>Fix:</p>
+<pre><code class="language-go" data-line-numbers="2,6">type container struct {
+	index big.Int
+}
+
+func (c *container) updateIndex(val *big.Int) {
+	c.index.Set(val)
+}
+</code></pre>
+</section><section>
+<h1 id="tools">Tools</h1>
+<p>Which tools I did use for this examples?</p>
+</section><section>
+<h3 id="go-build">go build</h3>
+<p>With gcflags:</p>
+<pre><code class="language-sh" data-line-numbers="1|2|3|4">$ go build -gcflags '-m' # simple escape analysis
+$ go build -gcflags '-m=2' # more verbose analysis
+$ go build -gcflags '-l' # disable inlining
+$ go build -gcflags '-S' # print assembly listing
+</code></pre>
+</section><section>
+<h3 id="assembly">assembly</h3>
+<pre><code class="language-bash">$ go tool objdump -s main.main -S example.com &gt; main.go.s
+</code></pre>
+</section><section>
+<h3 id="lensm">lensm</h3>
+<p><a href="https://github.com/loov/lensm">github.com/loov/lensm</a></p>
+<p><img src="images/lensm.png" alt="lens-screenshot"></p>
+</section><section>
+<h3 id="benchmarks">Benchmarks</h3>
+<pre><code class="language-go" data-line-numbers>package main
+
+import &quot;testing&quot;
+
+func BenchmarkCaseOne(b *testing.B) {
+    // ...
+}
+</code></pre>
+</section><section>
+<h2 id="content">Content</h2>
+<ul>
+<li>Interfaces and generics</li>
+<li>Mutators</li>
+<li>Strings</li>
+</ul>
+</section>
+    <section><h1 id="interfaces">Interfaces</h1>
+<p>Be careful with interface function parameters &mdash; arguments for these parameters
+are often moved to heap before passing to the callee function.</p>
+
+
+
+<aside class="notes"><p>Actually it&rsquo;s not always obvious when the value will be moved to heap and when it&rsquo;s not.</p>
+</aside>
+</section><section>
+<h3 id="examples">Examples</h3>
+<pre><code class="language-go" data-line-numbers="1-3|5-8|10-14">type Inter interface { // like fmt.Stringer
+	Int64() int64
+}
+
+//go:noinline
+func toInt(i Inter) int64 {
+	return i.Int64()
+}
+
+type inter64 int64 // implementation
+
+func (i inter64) Int64() int64 {
+	return int64(i)
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>Inter interface is Like fmt.Stringer.</p>
+<p>inter64 Int64() method has value receiver.</p>
+</aside>
+</section><section>
+<p>Which value is moved to the heap?</p>
+<pre><code class="language-go" data-line-numbers="1-7">func main() {
+	i64_1 := inter64(1)
+	_ = toInt(i64_1)
+
+	i64_256 := inter64(256)
+	_ = toInt(i64_256)
+}
+
+//go:noinline
+func toInt(i Inter) int64 {
+	return i.Int64()
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>Ask which argument is moved to heap:</p>
+<ul>
+<li>none</li>
+<li>one of them</li>
+<li>both</li>
+</ul>
+</aside>
+</section><section>
+<p>Escape analysis reports that both values was moved to heap. Isn&rsquo;t it?</p>
+<pre><code class="language-txt" data-line-numbers="1,5,9,10">i64_1 escapes to heap:
+  flow: {heap} = &amp;{storage for i64_1}:
+    from i64_1 (spill) at ./main.go:50:12
+    from toInt(i64_1) (call parameter) at ./main.go:50:11
+i64_256 escapes to heap:
+  flow: {heap} = &amp;{storage for i64_256}:
+    from i64_256 (spill) at ./main.go:55:12
+    from toInt(i64_256) (call parameter) at ./main.go:55:11
+i64_1 escapes to heap
+i64_256 escapes to heap
+</code></pre>
+</section><section>
+<h2 id="go-deeper">Go deeper</h2>
+<p>The arguments for the function parameter is converted with <code>convT64</code>:</p>
+<pre><code class="language-x86asm" data-line-numbers="1">CALL runtime.convT64(SB)			
+MOVQ AX, BX					
+LEAQ go:itab.main.inter64,main.Inter(SB), AX	
+CALL main.toInt(SB)	
+</code></pre>
+
+
+
+<aside class="notes"><p>In both cases convT64</p>
+</aside>
+</section><section>
+<p>The <code>runtime.convT64</code> function <strong>may</strong> move value to heap
+and returns pointer to the value:</p>
+<pre><code class="language-go" data-line-numbers="|3|5,6">func convT64(val uint64) (x unsafe.Pointer) {
+	if val &lt; uint64(len(staticuint64s)) {
+		x = unsafe.Pointer(&amp;staticuint64s[val])
+	} else {
+		x = mallocgc(8, uint64Type, false)
+		*(*uint64)(x) = val
+	}
+	return
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>Two branch:</p>
+<ol>
+<li>when value is less then cache size</li>
+<li>otherwise allocate memory</li>
+</ol>
+</aside>
+</section><section>
+<p>Where <code>staticuint64s</code> is an array of integers from <code>0x00</code> to <code>0xff</code>:</p>
+<pre><code class="language-go" data-line-numbers>// staticuint64s is used to avoid allocating in convTx
+// for small integer values.
+var staticuint64s = [...]uint64{
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  // ...
+  0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
+}
+</code></pre>
+</section><section>
+<pre><code class="language-go" data-line-numbers>func main() {
+	i64_1 := inter64(1) // doesn't escape
+	_ = toInt(i64_1)    // get from statucuints64
+
+	i64_256 := inter64(256) // escapes to heap
+	_ = toInt(i64_256)      // allocate
+}
+</code></pre>
+</section><section>
+<h3 id="the-bottom-line">The bottom line</h3>
+<p>Escape analyzer report is just a hint for possible heap allocation:
+check it to be sure.</p>
+
+
+
+<aside class="notes"><p>Escape analysis may be wrong, always use benchmarks for critical code.</p>
+<p>BTW, calling a function with interface parameters leads to types lookup in itable.</p>
+</aside>
+</section><section>
+<h3 id="using-exact-parameters">Using exact parameters</h3>
+<pre><code class="language-go" data-line-numbers="6-8|2-3">func main() {
+	i64_1 := inter64(1) // MOVL $0x1, AX
+	_ = toInt64(i64_1)  // CALL main.toInt64(SB)
+}
+
+func toInt64(i inter64) int64 {
+	return i.Int64()
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>One of possible solutions.</p>
+<p>No allocations.</p>
+</aside>
+</section><section>
+<h3 id="generic-function">Generic function</h3>
+<pre><code class="language-go" data-line-numbers="6-8">func main() {
+	i64_1 := inter64(1)
+	_ = toIntGeneric(i64_1)
+}
+
+func toIntGeneric[T Inter](i T) int64 {
+	return i.Int64()
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>No allocation for <code>int64</code> here too.</p>
+</aside>
+</section><section>
+<p>Compiler creates generic function for <code>go.shape.int64</code>,
+where the argument is passed by value.</p>
+
+
+
+<aside class="notes"><p>Compiler generates generic functions for different GCShapes.
+Pointer GCShape will be allocated on heap.
+Generic function call can not be inlined.</p>
+<p>The GC shape of a type means how that type appears
+to the allocator / garbage collector.
+It is determined by its size, its required alignment,
+and which parts of the type contain a pointer.</p>
+</aside>
+</section><section>
+<p><code>inter64</code> argument is not moved to heap.</p>
+<pre><code class="language-x86asm" data-line-numbers="2">LEAQ main..dict.toIntGeneric[main.inter64](SB), AX	
+MOVL $0x1, BX						
+CALL main.toIntGeneric[go.shape.int64](SB)
+</code></pre>
+
+
+
+<aside class="notes"><p>No allocation but additional overhead on types lookup in dict.</p>
+</aside>
+</section><section>
+<p>It has dynamic call → can&rsquo;t be inlined:</p>
+<pre><code class="language-x86asm" data-line-numbers="1,3,6">LEAQ main..dict.toIntGeneric[main.inter32](SB), AX	
+; ---
+MOVQ 0(AX), CX		
+MOVQ AX, DX		
+MOVL BX, AX		
+CALL CX			
+ADDQ $0x8, SP		
+</code></pre>
+</section><section>
+<h3 id="pointer-type">Pointer type</h3>
+<pre><code class="language-go" data-line-numbers>type interPtr int64
+
+func (i *interPtr) Int64() int64 {
+	return int64(*i)
+}
+</code></pre>
+</section><section>
+<p>Pointer type arguments are moved to heap for interface and generic function parameters.</p>
+</section><section>
+<pre><code class="language-go" data-line-numbers="2,3,7-10|2,4,11-14">func main() {
+	iPtr := interPtr(1)
+	_ = toInt(&amp;iPtr)
+	_ = toIntGeneric(&amp;iPtr)
+}
+
+//go:noinline
+func toInt(i Inter) int64 {
+	return i.Int64()
+}
+
+func toIntGeneric[T Inter](i T) int64 {
+	return i.Int64()
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>Moved to heap and dynamic call.</p>
+</aside>
+</section><section>
+<p>No allocation for exact types:</p>
+<pre><code class="language-go" data-line-numbers>func main() {
+	iPtr := interPtr(1)
+	_ = toIntPtr(&amp;iPtr)
+}
+
+func toIntPtr(i *interPtr) int64 {
+	return i.Int64()
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>More examples in repository</p>
+</aside>
+</section><section>
+<p>More examples in repository:</p>
+<ul>
+<li><code>int32</code></li>
+<li><code>string</code></li>
+<li><code>type foo struct</code></li>
+</ul>
+</section><section>
+<p>If function with interface parameter is inlined, compiler may not move to heap its
+arguments.</p>
+
+
+
+<aside class="notes"><p>And it usually has better performance than generic.
+Because generic function can&rsquo;t be inlined and has dynamic calls.
+All previous examples I&rsquo;ve compiled with disable inlines gcflags option.</p>
+</aside>
+</section><section>
+<h2 id="pros-and-cons">Pros and cons</h2>
+<p><strong>Actual type parameters</strong></p>
+<ul>
+<li>
+
+<span class='fragment ' >Can avoid allocation ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >No dynamic calls ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >Could be inlined ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >Write more code ➖</span>
+
+</li>
+</ul>
+</section><section>
+<h2 id="pros-and-cons-1">Pros and cons</h2>
+<p><strong>Interface type parameters</strong></p>
+<ul>
+<li>
+
+<span class='fragment ' >Could be inlined ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >More readable code ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >Often moved to heap if not inlined ➖</span>
+
+</li>
+<li>
+
+<span class='fragment ' >Dynamic call if not inlined ➖</span>
+
+</li>
+</ul>
+</section><section>
+<h2 id="pros-and-cons-2">Pros and cons</h2>
+<p><strong>Generic type parameters</strong></p>
+<ul>
+<li>
+
+<span class='fragment ' >More readable code ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >No allocation for some GCShapes ➕</span>
+
+</li>
+<li>
+
+<span class='fragment ' >Dynamic call ➖</span>
+
+</li>
+<li>
+
+<span class='fragment ' >Can not be inlined ➖</span>
+
+</li>
+</ul>
+</section><section>
+<h2 id="summary">Summary</h2>
+<ul>
+<li>Check if interface could be inlined</li>
+<li>Try generic method for primitive types</li>
+<li>Use <code>func</code> with actual types</li>
+<li>Or redesign the function</li>
+</ul>
+
+
+
+<aside class="notes"><ul>
+<li>
+<p>Quite often small functions with interface parameters could be inlined.</p>
+</li>
+<li>
+<p>If there are no so many different types for function parameters, try to
+implement different functions for each type.</p>
+</li>
+<li>
+<p>Generic method may have better performance for primitive types.
+Try to think about changing data type to generic instead of using generic
+function parameters.</p>
+</li>
+</ul>
+</aside>
+</section>
+    <section><h1 id="mutators">Mutators</h1>
+<p>Assigning a pointer to a struct field causes heap allocation.</p>
+</section><section>
+<p>Example:</p>
+<pre><code class="language-go" data-line-numbers="|5-8|10-12">type foo struct {
+	f *int
+}
+
+func (b *foo) setDefault() {
+	var one int = 1 // moved to heap: one
+	b.f = &amp;one
+}
+
+func (b *foo) setF(f *int) {
+	b.f = f
+}
+</code></pre>
+</section><section>
+<p>Both values are moved to heap:</p>
+<pre><code class="language-go" data-line-numbers="2-3|5-7">func main() {
+	var b1 foo
+	b1.setDefault()
+
+	var b2 foo
+	var f int = 2 // moved to heap: f
+	b2.setF(&amp;f)
+}
+</code></pre>
+</section><section>
+<p>Separate allocation and value assignment:</p>
+<pre><code class="language-go" data-line-numbers="2|5-7">type foo struct {
+	f *int
+}
+
+func (b *foo) setVal(v int) {
+	*b.f = v
+}
+</code></pre>
+</section><section>
+<pre><code class="language-go" data-line-numbers="2-3|5">func main() {
+	var target foo
+	target.f = new(int) // call before critical path
+
+	target.setVal(2) // call on performance critical path
+}
+</code></pre>
+</section><section>
+<p>Types in <code>math/big</code> are a good example of a design that avoid redundant allocations.</p>
+</section><section>
+<p>No allocations:</p>
+<pre><code class="language-go" data-line-numbers="|4-6|7-9">import &quot;math/big&quot;
+
+func main() {
+	one := new(big.Int).SetInt64(1)
+	two := new(big.Int).SetInt64(2)
+	three := new(big.Int).SetInt64(3)
+	var sum big.Int
+	sum.Add(&amp;sum, one).Add(&amp;sum, two).Add(&amp;sum, three)
+	println(sum.String())
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>How to design similar types?</p>
+<ul>
+<li>Do not store pointers in type struct</li>
+<li>Return only the pointers which were passed as params</li>
+</ul>
+</aside>
+</section><section>
+<h2 id="dirty-trick">Dirty trick</h2>
+<pre><code class="language-go" data-line-numbers="|1,4|7-9">type Child int
+
+type Parent struct {
+	C *Child
+}
+
+func (p *Parent) SetChild(c *Child) {
+	p.C = c
+}
+</code></pre>
+</section><section>
+<pre><code class="language-x86asm" data-line-numbers="1,3,4,5,9">; c := Child(1)
+LEAQ 0x4ef9(IP), AX		
+CALL runtime.newobject(SB)	
+MOVQ $0x1, 0(AX)		
+; p.SetChild(&amp;c)
+MOVQ AX, BX				
+LEAQ 0x20(SP), AX			
+NOPL 0(AX)(AX*1)			
+CALL main.(*Parent).SetChild(SB)	
+</code></pre>
+
+
+
+<aside class="notes"><p>As expected it&rsquo;s moved to heap.
+How to avoid it?</p>
+</aside>
+</section><section>
+<pre><code class="language-go" data-line-numbers="7-10|2">func (p *Parent) SetChildUnsafe(c *Child) {
+	p.C = (*Child)(noescape(unsafe.Pointer(c)))
+}
+
+//go:nosplit
+//go:nocheckptr
+func noescape(p unsafe.Pointer) unsafe.Pointer {
+	x := uintptr(p)
+	return unsafe.Pointer(x ^ 0)
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>noescape hides a pointer from escape analysis.
+it breaks the dependency between parameter and returned value.
+noescape can be inlined and compiles down to zero instructions.</p>
+<p>Got it from Go runtime sources.</p>
+</aside>
+</section><section>
+<pre><code class="language-x86asm" data-line-numbers="1,2,3,6">; c := Child(2)
+MOVQ $0x2, 0x10(SP)	
+; p.SetChildUnsafe(&amp;c)
+LEAQ 0x18(SP), AX			
+LEAQ 0x10(SP), BX			
+CALL main.(*Parent).SetChildUnsafe(SB)	
+</code></pre>
+</section><section>
+<p><strong>It could be dangerous</strong> &mdash; use only if the child object is not accessible outside of
+the parent&rsquo;s stack frame.</p>
+</section>
+    <section><h1 id="strings">Strings</h1>
+<p>What could be slow with strings in Go.</p>
+</section><section>
+<h2 id="convert-from-bytes">Convert from bytes</h2>
+<p>Creating a new string from byte slice copies data to the new
+string.</p>
+</section><section>
+<p>Source code for printing &ldquo;Hello, world!&rdquo;:</p>
+<pre><code class="language-go" data-line-numbers="|7">func main() {
+	// bytes for &quot;Hello, World!&quot; string
+	hello := []byte{
+		72, 101, 108, 108, 111, 44, 32,
+		87, 111, 114, 108, 100, 33,
+	}
+	helloStr := string(hello)
+	println(helloStr)
+}
+</code></pre>
+</section><section>
+<p>And its assembly code:</p>
+<pre><code class="language-x86asm" data-line-numbers="4">LEAQ 0x30(SP), AX			
+LEAQ 0x23(SP), BX			
+MOVL $0xd, CX				
+CALL runtime.slicebytetostring(SB)	
+</code></pre>
+</section><section>
+<p><code>runtime.slicebytetostring</code> - copies data from slice to string.</p>
+
+
+
+<aside class="notes"><p>From slice array to strings array.
+To make it immutable.</p>
+</aside>
+</section><section>
+<p>See &ldquo;unsafe&rdquo; package documentation (since go1.20):</p>
+<ul>
+<li><code>unsafe.SliceData(b)</code> - get pointer for underlying <code>b</code> array</li>
+<li><code>unsafe.String(ptr, l)</code> - returns <code>string</code> value with <code>b</code> pointer as backed
+bytes data pointer, and <code>l</code> as a string length (in bytes).</li>
+</ul>
+</section><section>
+<p>Using &ldquo;unsafe&rdquo; package to avoid copying data from byte slice:</p>
+<pre><code class="language-go" data-line-numbers="7-8">func main() {
+	// bytes for &quot;Hello, World!&quot; string
+	hello := []byte{
+		72, 101, 108, 108, 111, 44, 32,
+		87, 111, 114, 108, 100, 33,
+	}
+	helloStr := unsafe.String(unsafe.SliceData(hello),
+		len(hello))
+	println(helloStr)
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>It&rsquo;s unsafe!</p>
+</aside>
+</section><section>
+<p>Side effect &mdash; mutable string.</p>
+<pre><code class="language-go" data-line-numbers="8-10">func main() {
+	hello := []byte{
+		72, 101, 108, 108, 111, 44, 32,
+		87, 111, 114, 108, 100, 33,
+	}
+	helloStr := unsafe.String(unsafe.SliceData(hello),
+		len(hello))
+	println(helloStr) // -&gt; &quot;Hello, World!&quot;
+	hello[0] = 'h'
+	println(helloStr) // -&gt; &quot;hello, World!&quot;
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>Remember this for the next topic: strings concatenation.</p>
+<p>This leads to&hellip;</p>
+</aside>
+</section><section>
+<h2 id="concatenation">Concatenation</h2>
+<ul>
+<li><code>+=</code></li>
+<li><code>strings.Join()</code></li>
+<li><code>strings.Builder</code></li>
+<li><code>bytes.Buffer</code></li>
+<li><code>copy()</code></li>
+<li><code>unsafe</code></li>
+</ul>
+</section><section>
+<p>Simple concatenation <code>+=</code></p>
+<pre><code class="language-go" data-line-numbers="3-5">func concatStringsAdd(ss []string) string {
+	var s string
+	for _, v := range ss {
+		s += v
+	}
+	return s
+}
+</code></pre>
+</section><section>
+<p><code>strings.Join()</code></p>
+<pre><code class="language-go" data-line-numbers="4">import &quot;strings&quot;
+
+func concatStringsJoin(ss []string) string {
+	return strings.Join(ss, &quot;&quot;)
+}
+</code></pre>
+</section><section>
+<p><code>strings.Builder</code></p>
+<pre><code class="language-go" data-line-numbers="5-8">import &quot;strings&quot;
+
+func concatStringsBuilder(ss []string) string {
+	var b strings.Builder
+	for _, v := range ss {
+		b.WriteString(v)
+	}
+	return b.String()
+}
+</code></pre>
+</section><section>
+<p>Improve with <code>Grow()</code></p>
+<pre><code class="language-go" data-line-numbers="8,10-13|4-7,9">import &quot;strings&quot;
+
+func concatStringsBuilderGrow(ss []string) string {
+    var size int
+    for _, v := range ss {
+        size += len(v)
+    }
+    var b strings.Builder
+    b.Grow(size)
+    for _, v := range ss {
+        b.WriteString(v)
+    }
+    return b.String()
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>It was just appending string to buffer.
+Now we calculate total length in bytes,
+and Grow the buffer before writing.</p>
+</aside>
+</section><section>
+<p><code>bytes.Buffer</code></p>
+<pre><code class="language-go" data-line-numbers="5-8">import &quot;bytes&quot;
+
+func concatStringsBuffer(ss []string) string {
+	var b bytes.Buffer
+	for _, v := range ss {
+		b.WriteString(v)
+	}
+	return b.String()
+}
+</code></pre>
+</section><section>
+<p>With <code>Grow()</code></p>
+<pre><code class="language-go" data-line-numbers="4-7,9">import &quot;bytes&quot;
+
+func concatStringsBufferGrow(ss []string) string {
+    var size int
+    for _, v := range ss {
+        size += len(v)
+    }
+    var b bytes.Buffer
+    b.Grow(size)
+    for _, v := range ss {
+        b.WriteString(v)
+    }
+    return b.String()
+}
+</code></pre>
+</section><section>
+<p>Just <code>copy()</code> bytes data</p>
+<pre><code class="language-go" data-line-numbers="2-6|7-10|11">func concatStringsCopy(ss []string) string {
+    var size int
+    for _, v := range ss {
+        size += len(v)
+    }
+    b := make([]byte, size)
+    var i int
+    for _, v := range ss {
+        i += copy(b[i:], v)
+    }
+    return string(b)
+}
+</code></pre>
+</section><section>
+<p>Get rid of new allocation with <code>unsafe</code>:</p>
+<pre><code class="language-go" data-line-numbers="13">import &quot;unsafe&quot;
+
+func concatStringsCopyUnsafe(ss []string) string {
+    var size int
+    for _, v := range ss {
+        size += len(v)
+    }
+    b := make([]byte, size)
+    var i int
+    for _, v := range ss {
+        i += copy(b[i:], v)
+    }
+    return unsafe.String(unsafe.SliceData(b), len(b))
+}
+</code></pre>
+
+
+
+<aside class="notes"><p>Remember casts and mutable string.
+Here it&rsquo;s quite safe to use unsafe.</p>
+</aside>
+</section><section>
+<h3 id="benchmark-results">Benchmark results</h3>
+<p>Concat 100 strings of 100 bytes on AMD Ryzen 7 5700U.</p>
+
+
+
+<aside class="notes"><p>Check all benchmarks on GitHub. here only one benchmark set.</p>
+<p>// BuildeGrow, Join and CopyUnsafe - top (~ 1.9-2 mksec op on 100/100, just 1 alloc)
+// BufferGrow and Copy - second (~3.5 mksec, 2 allocations)
+// Just buffer and builder (~8.5 mksec, amount of allocations is logarithmic depends on amount of data)
+// Concat - the worst (~90 mksec, 100 allocations)</p>
+</aside>
+</section><section>
+<h3 id="benchmark-results-1st-place">Benchmark results (1st place)</h3>
+<p>1.9 - 2.0 μs and 1 allocation per operation</p>
+<ul>
+<li><code>strings.Builder</code> with <code>Grow</code></li>
+<li><code>strings.Join</code></li>
+<li>unsafe <code>copy</code></li>
+</ul>
+</section><section>
+<h3 id="benchmark-results-1st-place-1">Benchmark results (1st place)</h3>
+<p>Actually all has almost the same implementation:</p>
+<ul>
+<li><code>strings.Join</code> calls <code>strings.Builder</code> with <code>Grow</code></li>
+<li><code>strings.Builder</code> uses <code>copy</code> and unsafe operations to build the string</li>
+</ul>
+</section><section>
+<p>Join implementation:</p>
+<pre><code class="language-go" data-line-numbers="4,5,6,8-10">func Join(elems []string, sep string) string {
+    // ...
+    var b Builder
+    b.Grow(n)
+    b.WriteString(elems[0])
+    for _, s := range elems[1:] {
+        b.WriteString(sep)
+        b.WriteString(s)
+    }
+    return b.String()
+}
+</code></pre>
+</section><section>
+<p>Builder implementation:</p>
+<pre><code class="language-go" data-line-numbers="2">func (b *Builder) String() string {
+	return unsafe.String(unsafe.SliceData(b.buf), len(b.buf))
+}
+</code></pre>
+</section><section>
+<h3 id="other-results">Other results</h3>
+<ul>
+<li>3.5 μs and 2 allocations &ndash; <code>bytes.Buffer</code> with <code>Grow</code> and <code>copy()</code></li>
+<li>8.5 μs and log2(size) allocs &ndash; <code>strings.Builder</code> and <code>bytes.Buffer</code></li>
+<li>90 μs and 99 allocations &ndash; <code>str += next</code></li>
+</ul>
+
+
+
+<aside class="notes"><p>Not a surprise - bytes.Buffer casts bytes slice to string, same as copy impl.</p>
+</aside>
+</section><section>
+<p>To not reinvent the wheel just use <code>strings.Join</code> - it&rsquo;s the same
+as a <code>string.Builder</code> with <code>Grow</code> and <code>copy</code> with &ldquo;unsafe&rdquo;.</p>
+</section><section>
+<h3 id="summary">Summary</h3>
+<ul>
+<li>&ldquo;unsafe&rdquo; helps to avoid copying data
+But as a side effect, we get mutable string.</li>
+<li><code>strings.Join()</code> - fast and simple</li>
+<li><code>strings.Builder</code> with <code>Grow</code> - flexible and fast</li>
+<li><code>copy</code> with &ldquo;unsafe&rdquo; very flexible but the same as <code>Join()</code></li>
+</ul>
+</section>
+    <section><h2 id="thank-you">Thank you!</h2>
+<p><img src="images/qr-g4s8.png" alt="qr-g4s8"></p>
+<p><a href="https://github.com/g4s8">github.com/g4s8</a></p>
+</section>
+
+</div>
+      
+
+    </div>
+<script type="text/javascript" src=/reveal-hugo/object-assign.js></script>
+
+
+<script src="/reveal-js/dist/reveal.js"></script>
+
+
+  <script type="text/javascript" src="/reveal-js/plugin/markdown/markdown.js"></script>
+  
+  <script type="text/javascript" src="/reveal-js/plugin/highlight/highlight.js"></script>
+  
+  <script type="text/javascript" src="/reveal-js/plugin/zoom/zoom.js"></script>
+  
+  <script type="text/javascript" src="/reveal-js/plugin/notes/notes.js"></script>
+  
+<script type="text/javascript">
+  
+  
+  function camelize(map) {
+    if (map) {
+      Object.keys(map).forEach(function(k) {
+        newK = k.replace(/(\_\w)/g, function(m) { return m[1].toUpperCase() });
+        if (newK != k) {
+          map[newK] = map[k];
+          delete map[k];
+        }
+      });
+    }
+    return map;
+  }
+
+  var revealHugoDefaults = { center: true, controls: true, history: true, progress: true, transition: "slide" };
+  var revealHugoSiteParams = {"custom_css":"css/custom.css","highlight_theme":"github","slide_number":"c/t","theme":"white","transition":"none"};
+  var revealHugoPageParams = {};
+
+  var revealHugoPlugins = {
+    
+    plugins: [RevealMarkdown,RevealHighlight,RevealZoom,RevealNotes]
+  };
+
+  
+  var options = Object.assign({},
+    camelize(revealHugoDefaults),
+    camelize(revealHugoSiteParams),
+    camelize(revealHugoPageParams),
+    camelize(revealHugoPlugins));
+
+  Reveal.initialize(options);
+</script>
+
+
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+
+
+
+
+    
+    
+  </body>
+</html>
