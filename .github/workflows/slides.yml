@@ -42,7 +42,9 @@ jobs:
       - name: Set build version
         run: sed -i "s/PLACEHOLDER/${{ env.branch }}-${{ env.sha_short }}/" ./site/layouts/partials/home/reveal-hugo/head.html
       - name: Build html
-        run: hugo
+        run: |
+          cd ./site
+          hugo
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
