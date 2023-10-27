@@ -1,6 +1,6 @@
 baseURL = 'https://g4s8.github.io/gophercon-sg-2023/'
 languageCode = 'en-us'
-title = 'My New Hugo Site'
+title = 'Go low latency patterns'
 
 theme = ["github.com/dzello/reveal-hugo"]
 
