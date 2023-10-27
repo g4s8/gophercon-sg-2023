@@ -40,7 +40,7 @@ jobs:
           echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
           echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_ENV"
       - name: Set build version
-        run: sed "s/PLACEHOLDER/${{ env.branch }}-${{ env.sha_short }}/" layouts/partials/home/reveal-hugo/head.html
+        run: sed -i "s/PLACEHOLDER/${{ env.branch }}-${{ env.sha_short }}/" ./site/layouts/partials/home/reveal-hugo/head.html
       - name: Build html
         run: hugo
       - name: Setup Pages
