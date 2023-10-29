@@ -26,7 +26,8 @@ func (b *foo) setF(f *int) {
 
 ---
 
-Both values are moved to heap:
+Both values are moved to heap.
+
 ```go{2-3|5-7}
 func main() {
 	var b1 foo
@@ -40,7 +41,8 @@ func main() {
 
 ---
 
-Separate allocation and value assignment:
+Separate allocation and value assignment.
+
 ```go{2|5-7}
 type foo struct {
 	f *int
@@ -88,6 +90,23 @@ How to design similar types?
  - Return only the pointers which were passed as params
 {{%/note%}}
 
+---
+
+## Create similar types
+
+```go{|1|3-6|8-11}
+type SmallInt [1]int32
+
+func (i *SmallInt) Set(x int32) *SmallInt {
+	i[0] = x
+	return i
+}
+
+func (i *SmallInt) Add(x, y *SmallInt) *SmallInt {
+	i[0] = x[0] + y[0]
+	return i
+}
+```
 
 ---
 
@@ -160,6 +179,8 @@ CALL main.(*Parent).SetChildUnsafe(SB)
 ```
 
 ---
+
+## Warning
 
 **It could be dangerous** --- use only if the child object is not accessible outside of
 the parent's stack frame.

@@ -11,11 +11,10 @@ GopherCon Singapore 2023*
 
 ---
 
-## This talk
+# This talk
 
  - See some code examples
  - Analyze it with different tools
- - Check assembly code
  - Find problems and try to optimize
 
 {{%note%}}
@@ -38,6 +37,7 @@ GopherCon Singapore 2023*
  - Prefer readability where possible.
  - Prefer simple code, not complex.
  - Do not over optimize without need.
+ - Have a good reason and proof to optimize the code.
 
 {{%note%}}
 Simple and readable code is better than
@@ -49,12 +49,11 @@ by benchmarks or profiling.
 
 ---
 
-### Good to know
+# Good to know
 
- - Go memory model
- - Go internal types data structure
- - Garbage collector
- - A bit of runtime and compiler
+ - Go memory model.
+ - Go internal types data structure.
+ - A bit about GC, runtime, compiler.
 
 {{%note%}}
 Allocating memory in a heap may affect latency because of GC.
@@ -65,58 +64,25 @@ it's not accessible after function return.
 
 ---
 
-### Real life story
-
-This one-line function executed a few millions times/sec
-caused GC to eat about 30% of CPU:
-```go{5-7}
-type container struct {
-	index *big.Int
-}
-
-func (c *container) updateIndex(val *big.Int) {
-	c.index = new(big.Int).Set(val)
-}
-```
-
----
-
-Fix:
-```go{2,6}
-type container struct {
-	index big.Int
-}
-
-func (c *container) updateIndex(val *big.Int) {
-	c.index.Set(val)
-}
-```
-
----
-
 # Tools
 
 Which tools I did use for this examples?
 
----
 
-### go build
-
-With gcflags:
-
-```sh{1|2|3|4}
+```sh{1-4|5}
 $ go build -gcflags '-m' # simple escape analysis
 $ go build -gcflags '-m=2' # more verbose analysis
 $ go build -gcflags '-l' # disable inlining
 $ go build -gcflags '-S' # print assembly listing
-```
-
----
-
-### assembly
-```bash
 $ go tool objdump -s main.main -S example.com > main.go.s
 ```
+
+{{%note%}}
+ - different `gcflags`
+ - objdump
+ - benchmarks
+ - profiler
+{{%/note%}}
 
 ---
 
@@ -128,21 +94,7 @@ $ go tool objdump -s main.main -S example.com > main.go.s
 
 ---
 
-### Benchmarks
-
-```go{}
-package main
-
-import "testing"
-
-func BenchmarkCaseOne(b *testing.B) {
-    // ...
-}
-```
-
----
-
-## Content
+# Content
 
  - Interfaces and generics
  - Mutators
