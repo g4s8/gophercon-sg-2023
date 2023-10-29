@@ -1,0 +1,43 @@
+goos: linux
+goarch: amd64
+pkg: github.com/g4s8/gophercon-sg-2023/interfaces
+cpu: AMD Ryzen 7 5700U with Radeon Graphics         
+
+BenchmarkInt32/1/toInt-16   	                303868564	         3.940 ns/op	       0 B/op	       0 allocs/op
+BenchmarkInt32/1/toInt32-16 	                863178682	         1.389 ns/op	       0 B/op	       0 allocs/op
+BenchmarkInt32/1/toIntGeneric-16         	516306087	         2.342 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkInt32/256/toInt-16              	89225313	        13.51 ns/op	       4 B/op	       1 allocs/op
+BenchmarkInt32/256/toInt32-16            	860043272	         1.392 ns/op	       0 B/op	       0 allocs/op
+BenchmarkInt32/256/toIntGeneric-16       	514438692	         2.323 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkInt64/1/toInt-16                	320565039	         3.857 ns/op	       0 B/op	       0 allocs/op
+BenchmarkInt64/1/toInt64-16              	849841768	         1.391 ns/op	       0 B/op	       0 allocs/op
+BenchmarkInt64/1/toIntGeneric-16         	516357264	         2.326 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkInt64/256/toInt-16              	71363834	        16.38 ns/op	       8 B/op	       1 allocs/op
+BenchmarkInt64/256/toInt64-16            	859524956	         1.391 ns/op	       0 B/op	       0 allocs/op
+BenchmarkInt64/256/toIntGeneric-16       	518263399	         2.328 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkStr/toInt-16                    	21279974	        50.24 ns/op	      16 B/op	       1 allocs/op
+BenchmarkStr/toIntStr-16                 	145787185	         8.189 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStr/toIntGeneric-16             	127645711	         9.303 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkStruct/toInt-16                 	322707123	         4.384 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStruct/toIntStruct-16           	862958710	         1.389 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStruct/toIntGeneric-16          	514770255	         2.335 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkPtrStruct/toInt-16              	72869763	        16.49 ns/op	       8 B/op	       1 allocs/op
+BenchmarkPtrStruct/toIntStruct-16        	850914592	         1.391 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPtrStruct/toIntGeneric-16       	73991246	        15.93 ns/op	       8 B/op	       1 allocs/op
+
+BenchmarkStructPtr/toInt-16              	513452308	         2.329 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStructPtr/toIntStruct-16        	1000000000	         1.160 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStructPtr/toIntGeneric-16       	572518993	         2.098 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkPtrStructPtr/toInt-16           	41635731	        24.22 ns/op	       8 B/op	       1 allocs/op
+BenchmarkPtrStructPtr/toIntStruct-16     	862110100	         1.392 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPtrStructPtr/toIntGeneric-16    	50499226	        23.55 ns/op	       8 B/op	       1 allocs/op
+
+PASS
+ok  	github.com/g4s8/gophercon-sg-2023/interfaces	42.564s

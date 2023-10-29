@@ -36,6 +36,24 @@ func BenchmarkStruct(b *testing.B) {
 	b.Run("toIntGeneric", newStructToIntGenericBenchmark(1))
 }
 
+func BenchmarkPtrStruct(b *testing.B) {
+	b.Run("toInt", newPtrStructToIntBenchmark(1))
+	b.Run("toIntStruct", newPtrStructToIntPtrStructBenchmark(1))
+	b.Run("toIntGeneric", newPtrStructToIntGenericBenchmark(1))
+}
+
+func BenchmarkStructPtr(b *testing.B) {
+	b.Run("toInt", newStructPtrToIntBenchmark(1))
+	b.Run("toIntStruct", newStructPtrToIntStructPtrBenchmark(1))
+	b.Run("toIntGeneric", newStructPtrToIntGenericBenchmark(1))
+}
+
+func BenchmarkPtrStructPtr(b *testing.B) {
+	b.Run("toInt", newPtrStructPtrToIntBenchmark(1))
+	b.Run("toIntStruct", newPtrStructPtrToIntPtrStructPtrBenchmark(1))
+	b.Run("toIntGeneric", newPtrStructPtrToIntGenericBenchmark(1))
+}
+
 func newInt32ToIntBenchmark(val int32) func(*testing.B) {
 	return func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -120,8 +138,8 @@ func newStrToIntGenericBenchmark(val string) func(*testing.B) {
 func newStructToIntBenchmark(val int64) func(*testing.B) {
 	return func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			target := interStruct{x: val}
-			toInt(&target)
+			target := interStruct{val}
+			toInt(target)
 		}
 	}
 }
@@ -129,8 +147,8 @@ func newStructToIntBenchmark(val int64) func(*testing.B) {
 func newStructToIntStructBenchmark(val int64) func(*testing.B) {
 	return func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			target := interStruct{x: val}
-			toIntStruct(&target)
+			target := interStruct{val}
+			toIntStruct(target)
 		}
 	}
 }
@@ -138,7 +156,88 @@ func newStructToIntStructBenchmark(val int64) func(*testing.B) {
 func newStructToIntGenericBenchmark(val int64) func(*testing.B) {
 	return func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			target := interStruct{x: val}
+			target := interStruct{val}
+			toIntGeneric(target)
+		}
+	}
+}
+
+func newPtrStructToIntBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interPtrStruct{val}
+			toInt(&target)
+		}
+	}
+}
+
+func newPtrStructToIntPtrStructBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interPtrStruct{val}
+			toIntPtrStruct(&target)
+		}
+	}
+}
+
+func newPtrStructToIntGenericBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interPtrStruct{val}
+			toIntGeneric(&target)
+		}
+	}
+}
+
+func newStructPtrToIntBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interStructPtr{&val}
+			toInt(target)
+		}
+	}
+}
+
+func newStructPtrToIntStructPtrBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interStructPtr{&val}
+			toIntStructPtr(target)
+		}
+	}
+}
+
+func newStructPtrToIntGenericBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interStructPtr{&val}
+			toIntGeneric(target)
+		}
+	}
+}
+
+func newPtrStructPtrToIntBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interPtrStructPtr{&val}
+			toInt(&target)
+		}
+	}
+}
+
+func newPtrStructPtrToIntPtrStructPtrBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interPtrStructPtr{&val}
+			toIntPtrStructPtr(&target)
+		}
+	}
+}
+
+func newPtrStructPtrToIntGenericBenchmark(val int64) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			target := interPtrStructPtr{&val}
 			toIntGeneric(&target)
 		}
 	}
