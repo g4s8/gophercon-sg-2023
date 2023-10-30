@@ -22,22 +22,40 @@ GopherCon Singapore 2023*
      - This talk is about code patterns and examples
      for low-latency code.
      - More examples and less theory.
-     - It's not about algorithms, it's about Go internals.
 
-    - It could be useful when your code should react to external events
-    in a fast and predictable time.
-    - Of course, there will be some unpredictable factors,
-    like hardware, OS scheduler, etc.
+Good to know
+
+ - Go memory model.
+ - Go internal types data structure.
+ - A bit about GC, runtime, compiler.
+{{%/note%}}
+
+---
+
+# Latency
+
+> A time delay between the cause and the effect.
+
+(c) Wikipedia
+
+{{%note%}}
+    - Qute: generally speaking
+    - A time delay between event and reaction to the event.
+    - Can't improve latency of hardware, OS, thread schedulers
+    from code.
+    - Can improve by removing random-time operations from code.
+    - One of the main random fixable by code: GC and allocations,
+    syncronization.
 {{%/note%}}
 
 ---
 
 # Disclaimer
 
- - Prefer readability where possible.
- - Prefer simple code, not complex.
- - Do not over optimize without need.
- - Have a good reason and proof to optimize the code.
+ - {{%fragment%}}Prefer readability where possible.{{%/fragment%}}
+ - {{%fragment%}}Prefer simple code, not complex.{{%/fragment%}}
+ - {{%fragment%}}Do not over optimize without need.{{%/fragment%}}
+ - {{%fragment%}}Have a good reason and proof to optimize the code.{{%/fragment%}}
 
 {{%note%}}
 Simple and readable code is better than
@@ -45,21 +63,6 @@ complex and unreadable.
 
 Optimize only when sure about it and proved
 by benchmarks or profiling.
-{{%/note%}}
-
----
-
-# Good to know
-
- - Go memory model.
- - Go internal types data structure.
- - A bit about GC, runtime, compiler.
-
-{{%note%}}
-Allocating memory in a heap may affect latency because of GC.
-
-Object is moved to heap if compiler can't prove that
-it's not accessible after function return.
 {{%/note%}}
 
 ---
@@ -96,6 +99,7 @@ $ go tool objdump -s main.main -S example.com > main.go.s
 
 # Content
 
- - Interfaces and generics
+ - Interfaces
+ - Generics
+ - Inlines
  - Mutators
- - Strings

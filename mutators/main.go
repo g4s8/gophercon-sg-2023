@@ -20,7 +20,11 @@ func main() {
 
 	var b4 foo
 	var f4 int = 4
-	b4.Setnsafe(&f4)
+	b4.SetUnsafe(&f4)
+
+	var b5 foo
+	var f5 int = 5
+	b5.setValPtr(&f5)
 }
 
 func (b *foo) setDefault() {
@@ -36,7 +40,11 @@ func (b *foo) setVal(v int) {
 	*b.f = v
 }
 
-func (b *foo) Setnsafe(c *int) {
+func (b *foo) setValPtr(v *int) {
+	*b.f = *v
+}
+
+func (b *foo) SetUnsafe(c *int) {
 	b.f = (*int)(noescape(unsafe.Pointer(c)))
 }
 

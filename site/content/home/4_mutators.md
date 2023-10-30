@@ -64,6 +64,24 @@ func main() {
 }
 ```
 
+{{%note%}}
+Possible solution.
+{{%/note%}}
+
+---
+
+If you pass a pointer.
+
+```go{}
+type foo struct {
+	f *int
+}
+
+func (b *foo) setValPtr(v *int) {
+	*b.f = *v
+}
+```
+
 ---
 
 Types in `math/big` are a good example of a design that avoid redundant allocations.
@@ -110,9 +128,9 @@ func (i *SmallInt) Add(x, y *SmallInt) *SmallInt {
 
 ---
 
-## Dirty trick
+## How to bypass allocation
 
-```go{|1,4|7-9}
+```go{}
 type Child int
 
 type Parent struct {
@@ -140,12 +158,13 @@ CALL main.(*Parent).SetChild(SB)
 
 {{%note%}}
 As expected it's moved to heap.
-How to avoid it?
 {{%/note%}}
 
 ---
 
-```go{7-10|2}
+## Dirty hack
+
+```go{5-10|2}
 func (p *Parent) SetChildUnsafe(c *Child) {
 	p.C = (*Child)(noescape(unsafe.Pointer(c)))
 }

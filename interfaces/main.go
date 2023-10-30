@@ -5,59 +5,59 @@ type Inter interface {
 }
 
 func main() {
-	// i32_1 := inter32(1)
-	// _ = toInt(i32_1)
-	// _ = toInt32(i32_1)
-	// _ = toIntGeneric(i32_1)
+	i32_1 := inter32(1)
+	_ = toInt(i32_1)
+	_ = toInt32(i32_1)
+	_ = toIntGeneric(i32_1)
 
-	// i32_256 := inter32(256)
-	// _ = toInt(i32_256)
-	// _ = toInt32(i32_256)
-	// _ = toIntGeneric(i32_256)
+	i32_256 := inter32(256)
+	_ = toInt(i32_256)
+	_ = toInt32(i32_256)
+	_ = toIntGeneric(i32_256)
 
-	// i64_1 := inter64(1)
-	// _ = toInt(i64_1)
-	// _ = toInt64(i64_1)
-	// _ = toIntGeneric(i64_1)
+	i64_1 := inter64(1)
+	_ = toInt(i64_1)
+	_ = toInt64(i64_1)
+	_ = toIntGeneric(i64_1)
 
-	// i64_256 := inter64(256)
-	// _ = toInt(i64_256)
-	// _ = toInt64(i64_256)
-	// _ = toIntGeneric(i64_256)
+	i64_256 := inter64(256)
+	_ = toInt(i64_256)
+	_ = toInt64(i64_256)
+	_ = toIntGeneric(i64_256)
 
-	// iStr := interStr("1")
-	// _ = toInt(iStr)
-	// _ = toIntStr(iStr)
-	// _ = toIntGeneric(iStr)
+	iStr := interStr("1")
+	_ = toInt(iStr)
+	_ = toIntStr(iStr)
+	_ = toIntGeneric(iStr)
 
-	// iPtr := interPtr(1)
-	// _ = toInt(&iPtr)
-	// _ = toIntPtr(&iPtr)
-	// _ = toIntGeneric(&iPtr)
+	iPtr := interPtr(1)
+	_ = toInt(&iPtr)
+	_ = toIntPtr(&iPtr)
+	_ = toIntGeneric(&iPtr)
 
-	// iStruct := interStruct{1}
-	// _ = toInt(iStruct)
-	// _ = toIntStruct(iStruct)
-	// _ = toIntGeneric(iStruct)
+	iStruct := interStruct{1}
+	_ = toInt(iStruct)
+	_ = toIntStruct(iStruct)
+	_ = toIntGeneric(iStruct)
 
-	// iPtrStruct := interPtrStruct{1}
-	// _ = toInt(&iPtrStruct)
-	// _ = toIntPtrStruct(&iPtrStruct)
-	// _ = toIntGeneric(&iPtrStruct)
+	iPtrStruct := interPtrStruct{1}
+	_ = toInt(&iPtrStruct)
+	_ = toIntPtrStruct(&iPtrStruct)
+	_ = toIntGeneric(&iPtrStruct)
 
-	// iStructPtr := interStructPtr{}
-	// iStructPtr.val = new(int64)
-	// *iStructPtr.val = 1
-	// _ = toInt(iStructPtr)
-	// _ = toIntStructPtr(iStructPtr)
-	// _ = toIntGeneric(iStructPtr)
+	iStructPtr := interStructPtr{}
+	iStructPtr.val = new(int64)
+	*iStructPtr.val = 1
+	_ = toInt(iStructPtr)
+	_ = toIntStructPtr(iStructPtr)
+	_ = toIntGeneric(iStructPtr)
 
-	// iPtrStructPtr := interPtrStructPtr{}
-	// iPtrStructPtr.val = new(int64)
-	// *iPtrStructPtr.val = 1
-	// _ = toInt(&iPtrStructPtr)
-	// _ = toIntPtrStructPtr(&iPtrStructPtr)
-	// _ = toIntGeneric(&iPtrStructPtr)
+	iPtrStructPtr := interPtrStructPtr{}
+	iPtrStructPtr.val = new(int64)
+	*iPtrStructPtr.val = 1
+	_ = toInt(&iPtrStructPtr)
+	_ = toIntPtrStructPtr(&iPtrStructPtr)
+	_ = toIntGeneric(&iPtrStructPtr)
 
 	// calcs
 	var c1i calcInt

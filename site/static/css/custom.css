@@ -1,0 +1,22 @@
+.reveal red {
+  color: red;
+}
+
+.interface-structure div.mermaid svg {
+  max-width: 400px !important;
+  /* background: red; */
+}
+
+.debug-slide pre.left-part {
+}
+
+.debug-slide pre.left-part code {
+  background-color: red;
+}
+
+.debug-slide pre.right-part {
+}
+
+.debug-slide pre.right-part code {
+  background-color: green;
+}
