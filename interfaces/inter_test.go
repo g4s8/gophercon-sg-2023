@@ -10,6 +10,7 @@ func BenchmarkInt32(b *testing.B) {
 	b.Run("1/toIntGeneric", newInt32ToIntGenericBenchmark(1))
 
 	b.Run("256/toInt", newInt32ToIntBenchmark(256))
+	b.Run("256/toInt/oneline", newInt32ToIntOnelineBenchmark(256))
 	b.Run("256/toInt32", newInt32ToInt32Benchmark(256))
 	b.Run("256/toIntGeneric", newInt32ToIntGenericBenchmark(256))
 }
@@ -58,7 +59,15 @@ func newInt32ToIntBenchmark(val int32) func(*testing.B) {
 	return func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			target := inter32(val)
-			toInt(target)
+			_ = toInt(target)
+		}
+	}
+}
+
+func newInt32ToIntOnelineBenchmark(val int32) func(*testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = toInt(inter32(val))
 		}
 	}
 }

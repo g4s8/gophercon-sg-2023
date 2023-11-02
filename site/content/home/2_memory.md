@@ -37,24 +37,6 @@ not be accessed after function return.
 
 ---
 
-{{< slide class="debug-slide" >}}
-
-## DEBUG SLIDE
-
-<pre class="code-wrapper left-part">
-<code class="language-go hljs" data-line-numbers="">func main() {
-    println("hello")
-}</code>
-</pre>
-
-<pre class="code-wrapper right-part">
-<code class="language-go hljs" data-line-numbers="">func main() {
-    println("hello")
-}</code>
-</pre>
-
----
-
 Minimal reproducible heap escape.
 
 ```go{}
@@ -76,7 +58,11 @@ Try different x values.
 
 ---
 
-## Does it depend on runtime?
+### Sometimes it's not obvoius when the argument escapes to heap
+
+---
+
+## Why 256?
 
 ```go{}
 package main
@@ -84,7 +70,7 @@ package main
 import "fmt"
 
 func main() {
-	var x1, x2 int = 1, 1000
+	var x1, x2 int = 1, 256 // 0x01, 0xFF+1
 	fmt.Println(x1)
 	fmt.Println(x2)
 }
@@ -147,11 +133,85 @@ verify it to be sure before starting to fix.
 
 ---
 
-## How to avoid allocations?
+Only `x2` is allocated on heap.
+
+```go{}
+package main
+
+import "fmt"
+
+func main() {
+	var x1, x2 int = 1, 256 // 0x01, 0xFF+1
+	fmt.Println(x1)
+	fmt.Println(x2)
+}
+```
 
 ---
 
-### Interface parameter
+### Putting a word-sized-or-less non-pointer type in an interface value doesn't allocate
+
+---
+
+```go{}
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(1)
+	var one int = 1
+	fmt.Println(one)
+}
+```
+
+
+---
+
+### Println(1)
+
+```x86asm{4,5,6}
+MOVUPS X15, 0x18(SP)	
+LEAQ 0x6ea5(IP), DX	
+MOVQ DX, 0x18(SP)	
+LEAQ 0x36f71(IP), SI	
+MOVQ SI, 0x20(SP)	
+LEAQ 0x18(SP), AX	
+MOVL $0x1, BX		
+MOVQ BX, CX		
+CALL fmt.Println(SB)	
+```
+
+---
+
+### Println(one)
+
+```x86asm{2,3,6,7}
+MOVUPS X15, 0x18(SP)		
+MOVL $0x1, AX			
+CALL runtime.convT64(SB)	
+LEAQ 0x6e6b(IP), DX		
+MOVQ DX, 0x18(SP)		
+MOVQ AX, 0x20(SP)		
+LEAQ 0x18(SP), AX		
+MOVL $0x1, BX			
+MOVQ BX, CX			
+CALL fmt.Println(SB)	
+```
+
+---
+
+## How to avoid allocations?
+
+(if we have it and if we need it)
+
+{{%note%}}
+Allocations for interface parameters
+{{%/note%}}
+
+---
+
+### Interface parameter example
 
 ```go{1-3|5-9|11-14}
 type Inter interface { // like fmt.Stringer
@@ -177,6 +237,8 @@ inter64 Int64() method has value receiver.
 {{%/note%}}
 
 ---
+
+
 
 ### Exact type parameter
 
@@ -292,6 +354,20 @@ Because generic function can't be inlined and has dynamic calls.
 
 ---
 
+{{%note%}}
+https://github.com/golang/go/wiki/CompilerOptimizations
+{{%/note%}}
+
+## Inline rules 
+
+ - the number of AST nodes must less than 80;
+ - doesn't contain closures, defer, recover, select;
+ - isn't prefixed by `go:noinline`;
+ - isn't prefixed by `go:uintptrescapes`;
+ - function has body;
+
+---
+
 ```go{1-3|5-11}
 type Calc interface {
 	Add(int) int
@@ -335,7 +411,7 @@ func sum(calc Calc, vals ...int) (sum int) {
 
 ---
 
-### Implementation call was inlined.
+### Implementation call was inlined
 
 ```x86asm{1-2|3-8|9|10-12}
 ; var c1 calcInt
@@ -355,7 +431,7 @@ CALL main.(*calcInt).Add(SB)
 
 ---
 
-### Generic function.
+### Generic function
 
 ```go{6-11|1-4}
 func main() {
@@ -403,10 +479,10 @@ CALL SI
 
 ## Summary
 
- - {{%fragment%}}Check if interface could be inlined.{{%/fragment%}}
+ - {{%fragment%}}Check if interface could be inlined{{%/fragment%}}
  - {{%fragment%}}Maybe another design?{{%/fragment%}}
- - {{%fragment%}}Try using generic method.{{%/fragment%}}
- - {{%fragment%}}Use `func` with actual types.{{%/fragment%}}
+ - {{%fragment%}}Try using generic method{{%/fragment%}}
+ - {{%fragment%}}Use `func` with actual types{{%/fragment%}}
 
 {{%note%}}
  - Quite often small functions with interface parameters could be inlined.

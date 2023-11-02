@@ -13,9 +13,9 @@ GopherCon Singapore 2023*
 
 # This talk
 
- - See some code examples
- - Analyze it with different tools
- - Find problems and try to optimize
+ - {{%fragment%}}See some code examples{{%/fragment%}}
+ - {{%fragment%}}Analyze it with different tools{{%/fragment%}}
+ - {{%fragment%}}Find problems and try to optimize{{%/fragment%}}
 
 {{%note%}}
     In this  talk:
@@ -32,6 +32,23 @@ Good to know
 
 ---
 
+# Disclaimer
+
+ - {{%fragment%}}Prefer readability where possible{{%/fragment%}}
+ - {{%fragment%}}Prefer simple code, not complex{{%/fragment%}}
+ - {{%fragment%}}Do not over-optimize without need{{%/fragment%}}
+ - {{%fragment%}}Have a good reason and proof to optimize the code{{%/fragment%}}
+
+{{%note%}}
+Simple and readable code is better than
+complex and unreadable.
+
+Optimize only when sure about it and proved
+by benchmarks or profiling.
+{{%/note%}}
+
+---
+
 # Latency
 
 > A time delay between the cause and the effect.
@@ -41,29 +58,63 @@ Good to know
 {{%note%}}
     - Qute: generally speaking
     - A time delay between event and reaction to the event.
-    - Can't improve latency of hardware, OS, thread schedulers
-    from code.
-    - Can improve by removing random-time operations from code.
-    - One of the main random fixable by code: GC and allocations,
-    syncronization.
+    - Can't improve latency of hardware, OS,
+    thread schedulers from code.
+    - Can improve by removing random-time
+    operations from code.
+    - One of the main random fixable by code:
+    GC and allocations, syncronization.
 {{%/note%}}
 
 ---
 
-# Disclaimer
+## Common latency issues
 
- - {{%fragment%}}Prefer readability where possible.{{%/fragment%}}
- - {{%fragment%}}Prefer simple code, not complex.{{%/fragment%}}
- - {{%fragment%}}Do not over optimize without need.{{%/fragment%}}
- - {{%fragment%}}Have a good reason and proof to optimize the code.{{%/fragment%}}
+ - {{%fragment%}}IO operations{{%/fragment%}}
+ - {{%fragment%}}Syncronizations{{%/fragment%}}
+ - {{%fragment%}}Heap allocations{{%/fragment%}}
 
 {{%note%}}
-Simple and readable code is better than
-complex and unreadable.
-
-Optimize only when sure about it and proved
-by benchmarks or profiling.
+ - Try using non blocking IO operations if possible.
+ - Try to avoid syncronizations if possible,
+ e.g. using atomics or single thread logic.
 {{%/note%}}
+
+---
+
+## Real life allocation issue
+
+Causes GC to eat **30% of CPU time**
+
+```go{}
+import "math/big"
+
+type State struct {
+    // skipping fields
+    index *big.Int
+}
+
+func (s *state) UpdateIndex(val *big.Int) {
+    s.index = new(big.Int).Set(val)
+}
+```
+
+---
+
+## The fix
+
+```go{}
+import "math/big"
+
+type State struct {
+    // skipping fields
+    index big.Int
+}
+
+func (s *state) UpdateIndex(val *big.Int) {
+    s.index.Set(val)
+}
+```
 
 ---
 
@@ -97,9 +148,10 @@ $ go tool objdump -s main.main -S example.com > main.go.s
 
 ---
 
+
 # Content
 
  - Interfaces
  - Generics
  - Inlines
- - Mutators
+ - Pointers

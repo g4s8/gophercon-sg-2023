@@ -2,13 +2,18 @@
 weight = 32
 +++
 
-# Mutators
+# Pointers
 
-Assigning a pointer to a struct field causes heap allocation.
+ - {{%fragment%}}Assigning a pointer to a struct field{{%/fragment%}}
+ - {{%fragment%}}Returning a pointer{{%/fragment%}}
+
+{{%note%}}
+Two primary problems with pointers.
+{{%/note%}}
 
 ---
 
-Example:
+## Assign to the field
 ```go{|5-8|10-12}
 type foo struct {
 	f *int
@@ -41,9 +46,16 @@ func main() {
 
 ---
 
-Separate allocation and value assignment.
+### Separate alloc and assignment
 
-```go{2|5-7}
+```go{2,3,9|5,12-13}
+func main() {
+	var target foo
+	target.f = new(int) // call before critical path
+
+	target.setVal(2) // call on performance critical path
+}
+
 type foo struct {
 	f *int
 }
@@ -55,22 +67,7 @@ func (b *foo) setVal(v int) {
 
 ---
 
-```go{2-3|5}
-func main() {
-	var target foo
-	target.f = new(int) // call before critical path
-
-	target.setVal(2) // call on performance critical path
-}
-```
-
-{{%note%}}
-Possible solution.
-{{%/note%}}
-
----
-
-If you pass a pointer.
+If you prefer pointers parameters.
 
 ```go{}
 type foo struct {
@@ -81,6 +78,46 @@ func (b *foo) setValPtr(v *int) {
 	*b.f = *v
 }
 ```
+
+---
+
+## Returns
+
+```go{}
+type foo struct {
+    x int
+}
+
+func newFoo(x int) *foo {
+    return &foo{x} // escapes to heap
+}
+```
+
+---
+
+### Set the value
+
+```go{}
+type foo struct {
+    x int
+}
+
+func (f *foo) set(x int) *foo {
+    f.x = x
+    return f
+}
+
+func main() {
+    f := new(foo).set(42) // no allocation
+}
+```
+
+---
+
+## Returning a pointer
+
+ - {{%fragment%}}Parameter pointer{{%/fragment%}}
+ - {{%fragment%}}Method receiver pointer{{%/fragment%}}
 
 ---
 
@@ -110,7 +147,7 @@ How to design similar types?
 
 ---
 
-## Create similar types
+### How to create similar types?
 
 ```go{|1|3-6|8-11}
 type SmallInt [1]int32
@@ -203,3 +240,16 @@ CALL main.(*Parent).SetChildUnsafe(SB)
 
 **It could be dangerous** --- use only if the child object is not accessible outside of
 the parent's stack frame.
+
+---
+
+### Cleanup after this
+
+```go{}
+func dangerousOperation(p *Parent) {
+    defer p.SetChild(nil)
+    var c Child
+    p.SetChildUnsafe(&c)
+    // work with parent and child
+}
+```

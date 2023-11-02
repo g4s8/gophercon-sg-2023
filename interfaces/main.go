@@ -71,22 +71,27 @@ func main() {
 	_ = sumGeneric(&c2g, 1, 2, 3)
 }
 
+//go:noinline
 func toInt(i Inter) int64 {
 	return i.Int64()
 }
 
+//go:noinline
 func toInt32(i inter32) int64 {
 	return i.Int64()
 }
 
+//go:noinline
 func toInt64(i inter64) int64 {
 	return i.Int64()
 }
 
+//go:noinline
 func toIntStr(i interStr) int64 {
 	return i.Int64()
 }
 
+//go:noinline
 func toIntPtr(i *interPtr) int64 {
 	return i.Int64()
 }
